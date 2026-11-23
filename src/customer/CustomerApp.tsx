@@ -360,11 +360,6 @@ function Home({ catalog, openProduct, ads, onOpenAd, selectedCat, onSelectCat }:
   const promoCode = catalog?.settings?.promo_code;
   const promoDisc = catalog?.settings?.promo_discount;
   const mostOrdered = catalog?.most_ordered ?? [];
-  const containerRef = useRef<HTMLDivElement>(null);
-  const [currentIndex, setCurrentIndex] = useState(0);
-  const [isPaused, setIsPaused] = useState(false);
-  const AUTO_INTERVAL_MS = 4000;
-  const GAP_PX = 12;
   const items = (catalog?.categories ?? []);
   const searching = q.trim() !== '';
   /* عند اختيار فئة تُعرض هذه الفئة وحدها، وأثناء البحث تظهر فقط الفئات التي تحوي نتائج */
@@ -378,45 +373,6 @@ function Home({ catalog, openProduct, ads, onOpenAd, selectedCat, onSelectCat }:
     const c = (catalog?.categories ?? []).find((x) => x.slug === slug);
     return c ? c.name_ar : slug;
   };
-
-/* كروسل تلقائي للقسم "الأكثر طلباً" — Timer */
-// يبدأ الكروسل فقط إذا كان هناك منتجين فأكثر
-useEffect(() => {
-  if (mostOrdered.length <= 1) return;
-  const t = setInterval(() => {
-    if (isPaused) return;
-    setCurrentIndex((i) => (i + 1) % mostOrdered.length);
-  }, AUTO_INTERVAL_MS);
-  return () => clearInterval(t);
-}, [mostOrdered.length, isPaused]);
-
-/* التمرير السلبي — يتم قياس العرض بعد تحميل الصور مع إعادة المحاولة */
-useEffect(() => {
-  const el = containerRef.current;
-  if (!el || mostOrdered.length <= 1) return;
-
-  const scrollToCard = () => {
-    const firstCard = el.querySelector('button.w-40');
-    if (!firstCard) return;
-    const cardRect = firstCard.getBoundingClientRect();
-    if (cardRect.width <= 0) return; // الصور لم تُحمل بعد — ستُعاد المحاولة أدناه
-    const step = cardRect.width + GAP_PX;
-    el.scrollTo({ left: step * currentIndex, behavior: 'smooth' });
-  };
-
-  // محاولة فورية
-  scrollToCard();
-
-  // إعادة المحاولة عدة مرات لضمان تحميل الصور (كل 200ms، עד 5 مرات)
-  let attempts = 0;
-  const retry = setInterval(() => {
-    attempts++;
-    scrollToCard();
-    if (attempts >= 5) clearInterval(retry);
-  }, 200);
-
-  return () => clearInterval(retry);
-}, [currentIndex, mostOrdered.length]);
 
   const jumpToCat = (slug: string) => setTimeout(() => document.getElementById('cat-' + slug)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   const renderCard = (p: any, i: number, horizontal = false) => (
@@ -545,7 +501,7 @@ const heroBadge = (catalog?.settings?.hero_badge ?? '').trim();
           <h2 className="mb-3 flex items-center gap-1.5 text-[17px] font-black text-[#26301C]">
             <Icon name='star' size={15} filled className='text-[#B07C3A]' /> الأكثر طلبًا
           </h2>
-          <div ref={containerRef} className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 scroll-smooth" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)} onTouchStart={() => setIsPaused(true)} onTouchEnd={() => setIsPaused(false)}>
+          <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
             {mostOrdered.map((p, i) => (
               <button key={p.id} onClick={() => openProduct(p as unknown as Product)}
                 className='w-40 flex-none rounded-[1.4rem] bg-white p-2.5 text-right shadow-sm ring-1 ring-[#D5DEB4] transition hover:-translate-y-1 anim-rise'
