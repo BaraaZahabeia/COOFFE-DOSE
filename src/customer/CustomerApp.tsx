@@ -360,14 +360,64 @@ function Home({ catalog, openProduct, ads, onOpenAd, selectedCat, onSelectCat }:
   const promoCode = catalog?.settings?.promo_code;
   const promoDisc = catalog?.settings?.promo_discount;
   const mostOrdered = catalog?.most_ordered ?? [];
+  const containerRef = useRef<HTMLDivElement>(null);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [isPaused, setIsPaused] = useState(false);
+  const AUTO_INTERVAL_MS = 4000;
+  const GAP_PX = 12;
   const items = (catalog?.categories ?? []);
-  /* عند اختيار فئة تُعرض هذه الفئة وحدها داخل المنيو */
-  const menuCats = cat ? items.filter((c) => c.slug === cat) : items;
   const searching = q.trim() !== '';
+  /* عند اختيار فئة تُعرض هذه الفئة وحدها، وأثناء البحث تظهر فقط الفئات التي تحوي نتائج */
+  const menuCats = cat
+    ? items.filter((c) => c.slug === cat)
+    : searching
+      ? items.filter((c) => shown.some((p) => p.category === c.slug))
+      : items;
+  const circleCats = searching && !cat ? menuCats : items;
   const catLabel = (slug: string) => {
     const c = (catalog?.categories ?? []).find((x) => x.slug === slug);
     return c ? c.name_ar : slug;
   };
+
+/* كروسل تلقائي للقسم "الأكثر طلباً" — Timer */
+// يبدأ الكروسل فقط إذا كان هناك منتجين فأكثر
+useEffect(() => {
+  if (mostOrdered.length <= 1) return;
+  const t = setInterval(() => {
+    if (isPaused) return;
+    setCurrentIndex((i) => (i + 1) % mostOrdered.length);
+  }, AUTO_INTERVAL_MS);
+  return () => clearInterval(t);
+}, [mostOrdered.length, isPaused]);
+
+/* التمرير السلبي — يتم قياس العرض بعد تحميل الصور مع إعادة المحاولة */
+useEffect(() => {
+  const el = containerRef.current;
+  if (!el || mostOrdered.length <= 1) return;
+
+  const scrollToCard = () => {
+    const firstCard = el.querySelector('button.w-40');
+    if (!firstCard) return;
+    const cardRect = firstCard.getBoundingClientRect();
+    if (cardRect.width <= 0) return; // الصور لم تُحمل بعد — ستُعاد المحاولة أدناه
+    const step = cardRect.width + GAP_PX;
+    el.scrollTo({ left: step * currentIndex, behavior: 'smooth' });
+  };
+
+  // محاولة فورية
+  scrollToCard();
+
+  // إعادة المحاولة عدة مرات لضمان تحميل الصور (كل 200ms، עד 5 مرات)
+  let attempts = 0;
+  const retry = setInterval(() => {
+    attempts++;
+    scrollToCard();
+    if (attempts >= 5) clearInterval(retry);
+  }, 200);
+
+  return () => clearInterval(retry);
+}, [currentIndex, mostOrdered.length]);
+
   const jumpToCat = (slug: string) => setTimeout(() => document.getElementById('cat-' + slug)?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 80);
   const renderCard = (p: any, i: number, horizontal = false) => (
     <button key={p.id} onClick={() => openProduct(p)}
@@ -473,7 +523,7 @@ const heroBadge = (catalog?.settings?.hero_badge ?? '').trim();
       {/* الفئات — دوائر (تبقى ظاهرة مع تمييز المختار) */}
       <section className="mt-5">
         <div className="no-scrollbar -mx-4 flex gap-4 overflow-x-auto px-4 pb-1">
-          {items.map((c) => {
+          {circleCats.map((c) => {
             const active = cat === c.slug;
             const img = c.image_url || CAT_IMAGES[c.slug] || '/img/latte.jpg';
             return (
@@ -495,7 +545,7 @@ const heroBadge = (catalog?.settings?.hero_badge ?? '').trim();
           <h2 className="mb-3 flex items-center gap-1.5 text-[17px] font-black text-[#26301C]">
             <Icon name='star' size={15} filled className='text-[#B07C3A]' /> الأكثر طلبًا
           </h2>
-          <div className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1">
+          <div ref={containerRef} className="no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1 scroll-smooth" onMouseEnter={() => setIsPaused(true)} onMouseLeave={() => setIsPaused(false)} onTouchStart={() => setIsPaused(true)} onTouchEnd={() => setIsPaused(false)}>
             {mostOrdered.map((p, i) => (
               <button key={p.id} onClick={() => openProduct(p as unknown as Product)}
                 className='w-40 flex-none rounded-[1.4rem] bg-white p-2.5 text-right shadow-sm ring-1 ring-[#D5DEB4] transition hover:-translate-y-1 anim-rise'
@@ -523,7 +573,7 @@ const heroBadge = (catalog?.settings?.hero_badge ?? '').trim();
       <section id='menu-section' className='mt-5'>
         <div className="mb-3 flex items-center justify-between gap-2 px-1">
           <h2 className={cat
-            ? 'font-display rounded-full bg-[#26301C] px-3.5 py-1 text-[15px] font-extrabold leading-6 text-[#F3DEBA] shadow-sm ring-1 ring-[#C9D3A8]/30'
+            ? 'font-display rounded-full border border-white/70 bg-white/55 px-4 py-1.5 text-[16px] font-extrabold leading-6 text-[#26301C] shadow-[0_6px_18px_-8px_rgba(38,48,28,0.45)] ring-1 ring-[#5C6B3C]/10 backdrop-blur-md'
             : 'text-[17px] font-black text-[#26301C]'}>
             {cat ? catLabel(cat) : 'استكشف المنيو'}
           </h2>
@@ -532,29 +582,15 @@ const heroBadge = (catalog?.settings?.hero_badge ?? '').trim();
           {menuCats.map((c) => {
             const catProducts = shown.filter((p) => p.category === c.slug);
             const horizontal = !cat;
-            const expanded = expandedCatSlugs.has(c.slug);
-            const showProducts = horizontal ? catProducts : expanded ? catProducts : catProducts.slice(0, 6);
+            const showProducts = catProducts;
             return (
               <div key={c.slug} id={'cat-' + c.slug} className="mb-6 scroll-mt-24">
                 <div className="mb-2 mt-4 flex items-center gap-2 px-2">
                 {!cat && (
-                  <h3 className="font-display rounded-full bg-[#26301C] px-3.5 py-1 text-[15px] font-extrabold leading-6 text-[#F3DEBA] shadow-sm ring-1 ring-[#C9D3A8]/30">
+                  <h3 className="font-display rounded-full border border-white/70 bg-white/55 px-4 py-1.5 text-[15px] font-extrabold leading-6 text-[#26301C] shadow-[0_6px_18px_-8px_rgba(38,48,28,0.45)] ring-1 ring-[#5C6B3C]/10 backdrop-blur-md">
                     {c.name_ar}
                   </h3>
                 )}
-                  {!horizontal && catProducts.length > 6 && (
-                    <button onClick={() => {
-                      if (expanded) {
-                        setExpandedCatSlugs((s) => { const n = new Set(s); n.delete(c.slug); return n; });
-                      } else {
-                        setExpandedCatSlugs((s) => { const n = new Set(s); n.add(c.slug); return n; });
-                      }
-                    }}
-                      className="ms-auto flex items-center gap-1 rounded-full bg-[#E3E9C8] px-3 py-1 text-[11px] font-extrabold text-[#414D36] shadow-sm ring-1 ring-[#C4CF9E] transition hover:bg-[#D5DEB4] active:scale-95">
-                      <Icon name="chevron" size={11} strokeWidth={2.6} className={expanded ? 'rotate-90' : '-rotate-90'} />
-                      {expanded ? 'إظهار أقل' : `عرض الكل (${catProducts.length})`}
-                    </button>
-                  )}
                 </div>
                 {showProducts.length > 0 ? (
                   <div className={horizontal ? 'no-scrollbar -mx-4 flex gap-3 overflow-x-auto px-4 pb-1' : 'grid grid-cols-2 gap-3'}>
@@ -566,6 +602,9 @@ const heroBadge = (catalog?.settings?.hero_badge ?? '').trim();
               </div>
             );
           })}
+          {searching && menuCats.length === 0 && (
+            <p className="py-8 text-center text-[12px] font-bold text-[#94826A]">لا توجد نتائج مطابقة لبحثك</p>
+          )}
          </div>
       </section>
     </div>
@@ -1525,8 +1564,8 @@ export default function CustomerApp() {
     } catch (e: any) { show(e.message, 'err'); }
   };
 
-  const navItems: { to: string; icon: IconName; label: string; end?: boolean }[] = [
-    { to: '/', icon: 'home', label: 'الرئيسية', end: true },
+  const navItems: { to: string; icon: IconName; label: string; end?: boolean; onClick?: () => void }[] = [
+    { to: '/', icon: 'home', label: 'الرئيسية', end: true, onClick: () => setSelectedCat(null) },
     { to: '/favorites', icon: 'heart', label: 'المفضلة' },
     { to: '/rewards', icon: 'star', label: 'النقاط' },
     { to: '/orders', icon: 'receipt', label: 'الطلبات' },
@@ -1612,7 +1651,7 @@ export default function CustomerApp() {
         style={{ bottom: 'calc(1rem + env(safe-area-inset-bottom))' }}>
         <div className="flex w-full items-center justify-around rounded-full bg-white px-2 py-2 shadow-[0_18px_40px_-14px_rgba(42,50,35,.45)]">
           {navItems.map((t) => (
-            <NavLink key={t.to} to={t.to} end={t.end}
+            <NavLink key={t.to} to={t.to} end={t.end} onClick={t.onClick}
               className={({ isActive }) => isActive
                 ? 'flex items-center gap-1.5 rounded-full bg-[#26301C] px-4 py-2 text-white shadow-md'
                 : 'flex flex-col items-center gap-0.5 rounded-2xl px-2 py-1 text-[9.5px] font-bold text-[#7C8665] transition hover:text-[#26301C]'}>
