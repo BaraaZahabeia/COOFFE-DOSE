@@ -563,6 +563,18 @@ const heroBadge = (catalog?.settings?.hero_badge ?? '').trim();
           )}
          </div>
       </section>
+      {/* الفوتر — سوشال + رقم المحل */}
+      <footer className="mt-8 pb-6 text-center">
+        <div className="flex items-center justify-center gap-4 mb-3">
+          <a href="https://instagram.com" target="_blank" rel="noreferrer" className="grid size-10 place-items-center rounded-full bg-white ring-1 ring-[#D5DEB4] text-[#26301C] shadow-sm transition hover:bg-[#E3E9C8] active:scale-95">
+            <Icon name="instagram" size={18} />
+          </a>
+          <a href="https://facebook.com" target="_blank" rel="noreferrer" className="grid size-10 place-items-center rounded-full bg-white ring-1 ring-[#D5DEB4] text-[#26301C] shadow-sm transition hover:bg-[#E3E9C8] active:scale-95">
+            <Icon name="facebook" size={18} />
+          </a>
+        </div>
+        <a href="tel:+9647700000000" className="text-[13px] font-extrabold text-[#26301C]">+964 770 000 0000</a>
+      </footer>
     </div>
   );
 }
