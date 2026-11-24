@@ -6,7 +6,7 @@ export type IconName =
   | 'flame' | 'gift' | 'headset' | 'logout' | 'pin' | 'settings' | 'megaphone' | 'users'
   | 'package' | 'clipboard' | 'chart' | 'lock' | 'check' | 'x' | 'search' | 'phone'
   | 'instagram' | 'tiktok' | 'clock' | 'timer' | 'chevron' | 'eye' | 'trash' | 'edit' | 'info'
-  | 'store' | 'facebook' | 'globe' | 'cart' | 'heart' | 'image';
+  | 'store' | 'facebook' | 'globe' | 'cart' | 'heart' | 'image' | 'whatsapp';
 
 const PATHS: Record<IconName, ReactNode> = {
   home: <><path d="M3 10.5 12 3l9 7.5" /><path d="M5 10v10h14V10" /></>,
@@ -45,6 +45,7 @@ const PATHS: Record<IconName, ReactNode> = {
   info: <><circle cx="12" cy="12" r="9" /><path d="M12 8v.5M12 11v5" /></>,
   store: <><path d="M3 9.5 4.6 4h14.8L21 9.5" /><path d="M3 9.5h18" /><path d="M4.5 9.5V20h15V9.5" /><path d="M9.5 20v-5.5h5V20" /><path d="M3 13.5c1.6 0 3-1.2 3-2.7 0 1.5 1.4 2.7 3 2.7s3-1.2 3-2.7c0 1.5 1.4 2.7 3 2.7s3-1.2 3-2.7" /></>,
   facebook: <path d="M18 2h-3a5 5 0 0 0-5 5v3H7v4h3v8h4v-8h3l1-4h-4V7a1 1 0 0 1 1-1h3z" />,
+  whatsapp: <path d="M17.5 14.4c-.3-.1-1.7-.8-1.9-.9-.2-.1-.4-.1-.5.1-.2.2-.6.8-.8.9-.1.2-.3.2-.6.1-1.6-.8-2.7-1.4-3.8-3.2-.1-.2 0-.4.1-.5.1-.1.2-.3.3-.4.1-.1.1-.2.2-.3.1-.1.1-.2.1-.4 0-.1-.5-1.2-.7-1.6-.2-.4-.3-.3-.5-.3h-.4c-.1 0-.3.1-.5.2-.2.2-.7.7-.7 1.7s.7 2 1.6 3.1c.9 1.1 2 1.9 3.4 2.4.5.2.8.1 1.1.1.3 0 1-.4 1.1-.8.1-.4.1-.7.1-.8 0-.1-.1-.1-.2-.2zM12 2a9.9 9.9 0 0 0-8.4 15.2L2 22l4.9-1.6A9.9 9.9 0 1 0 12 2zm0 18a8 8 0 0 1-4.1-1.1l-.3-.2-3 .9.9-2.9-.2-.3A8 8 0 1 1 20 12a8 8 0 0 1-8 8z" />,
   globe: <><circle cx="12" cy="12" r="10" /><path d="M2 12h20" /><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z" /></>,
   cart: <><circle cx="9" cy="20" r="1.6" /><circle cx="17" cy="20" r="1.6" /><path d="M3 4h2l2.4 11.2a1.5 1.5 0 0 0 1.5 1.2h7.7a1.5 1.5 0 0 0 1.5-1.2L20 8H6" /></>,
   heart: <path d="M20.8 4.6a5.5 5.5 0 0 0-7.8 0L12 5.6l-1-1a5.5 5.5 0 0 0-7.8 7.8l1 1L12 21l7.8-7.6 1-1a5.5 5.5 0 0 0 0-7.8Z" />,
